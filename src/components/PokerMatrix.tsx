@@ -4,21 +4,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Poker hand matrix data
-const HANDS = [
-  ['AA', 'AKs', 'AQs', 'AJs', 'ATs', 'A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s'],
-  ['AKo', 'KK', 'KQs', 'KJs', 'KTs', 'K9s', 'K8s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s'],
-  ['AQo', 'KQo', 'QJo', 'JJ', 'JTs', 'J9s', 'J8s', 'J7s', 'J6s', 'J5s', 'J4s', 'J3s', 'J2s'],
-  ['AJo', 'KJo', 'QJo', 'JJ', 'JTs', 'J9s', 'J8s', 'J7s', 'J6s', 'J5s', 'J4s', 'J3s', 'J2s'],
-  ['ATo', 'KTo', 'QTo', 'JTo', 'TT', 'T9s', 'T8s', 'T7s', 'T6s', 'T5s', 'T4s', 'T3s', 'T2s'],
-  ['A9o', 'K9o', 'Q9o', 'J9o', 'T9o', '99', '98s', '97s', '96s', '95s', '94s', '93s', '92s'],
-  ['A8o', 'K8o', 'Q8o', 'J8o', 'T8o', '98o', '88', '87s', '86s', '85s', '84s', '83s', '82s'],
-  ['A7o', 'K7o', 'Q7o', 'J7o', 'T7o', '97o', '87o', '77', '76s', '75s', '74s', '73s', '72s'],
-  ['A6o', 'K6o', 'Q6o', 'J6o', 'T6o', '96o', '86o', '76o', '66', '65s', '64s', '63s', '62s'],
-  ['A5o', 'K5o', 'Q5o', 'J5o', 'T5o', '95o', '85o', '75o', '65o', '55', '54s', '53s', '52s'],
-  ['A4o', 'K4o', 'Q4o', 'J4o', 'T4o', '94o', '84o', '74o', '64o', '54o', '44', '43s', '42s'],
-  ['A3o', 'K3o', 'Q3o', 'J3o', 'T3o', '93o', '83o', '73o', '63o', '53o', '43o', '33', '32s'],
-  ['A2o', 'K2o', 'Q2o', 'J2o', 'T2o', '92o', '82o', '72o', '62o', '52o', '42o', '32o', '22']
-];
+const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+const HANDS = [];
+for (let i = 0; i < RANKS.length; i++) {
+  const row = [];
+  for (let j = 0; j < RANKS.length; j++) {
+    const rank1 = RANKS[i];
+    const rank2 = RANKS[j];
+
+    if (i === j) {
+      // Diagonal: Pairs
+      row.push(`${rank1}${rank1}`);
+    } else if (i < j) {
+      // Upper triangle: Suited hands (e.g., AKs, AQs)
+      row.push(`${rank1}${rank2}s`);
+    } else {
+      // Lower triangle: Offsuit hands (e.g., AKo, AQo)
+      row.push(`${rank2}${rank1}o`); // Note: rank2 then rank1 for offsuit to maintain standard naming (e.g., AKo not KAo)
+    }
+  }
+  HANDS.push(row);
+}
 
 interface ActionButton {
   id: string;
