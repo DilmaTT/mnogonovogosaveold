@@ -123,8 +123,8 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
   );
   
   const gridClasses = cn(
-    "grid grid-cols-13 aspect-square w-full select-none rounded-lg border",
-    isMobile ? "gap-0.5 sm:gap-1" : "gap-2 p-6"
+    "grid grid-cols-13 aspect-square w-full select-none rounded-lg",
+    isMobile ? "gap-0.5 sm:gap-1" : "gap-2 p-6 border" // Removed border for mobile
   );
   
   const buttonClasses = cn(
