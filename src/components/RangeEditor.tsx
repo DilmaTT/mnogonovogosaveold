@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { PokerMatrix, getCombinations, TOTAL_POKER_COMBINATIONS } from "./PokerMatrix"; // Import helpers
-import { Plus, Palette, Trash2, Copy } from "lucide-react"; // Added Copy
+import { Plus, Palette, Trash2, Copy, SlidersHorizontal } from "lucide-react"; // Added Copy and SlidersHorizontal
 import { cn } from "@/lib/utils";
-import { useRangeContext } from "@/contexts/RangeContext";
+import { useRangeContext, ActionButton } from "@/contexts/RangeContext";
+import { CreateActionButtonDialog } from "./CreateActionButtonDialog"; // Import the new dialog
 import {
   Dialog,
   DialogContent,
@@ -33,12 +34,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion"; // Import Accordion components
-
-interface ActionButton {
-  id: string;
-  name: string;
-  color: string;
-}
 
 interface Range {
   id: string;
@@ -255,6 +250,7 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
   const [activeAction, setActiveAction] = useState(actionButtons[0]?.id || 'raise');
   const [showRangeSelectorDialog, setShowRangeSelectorDialog] = useState(false);
   const [openFolderId, setOpenFolderId] = useState<string | null>(null); // State for Accordion
+  const [isCreateActionDialogOpen, setCreateActionDialogOpen] = useState(false);
 
   // Effect to set the open folder based on selectedRange
   useEffect(() => {
@@ -402,22 +398,14 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
     });
   };
 
-  const addActionButton = () => {
-    const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
-    const usedColors = actionButtons.map(b => b.color);
-    const availableColor = colors.find(c => !usedColors.includes(c)) || '#6b7280';
-    
-    const newButton: ActionButton = {
-      id: Date.now().toString(),
-      name: 'Действие',
-      color: availableColor
-    };
+  const handleSaveNewAction = (newButton: ActionButton) => {
     setActionButtons(prev => [...prev, newButton]);
+    setActiveAction(newButton.id);
   };
 
   const updateActionButton = (id: string, field: 'name' | 'color', value: string) => {
     setActionButtons(prev => prev.map(button => 
-      button.id === id ? { ...button, [field]: value } : button
+      (button.id === id && button.type === 'simple') ? { ...button, [field]: value } : button
     ));
   };
 
@@ -492,8 +480,8 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
       
       <div className={cn(
         "space-y-2 overflow-y-auto",
-        // Apply max-height only when NOT in dialog
-        !inDialog && (isMobileMode ? "max-h-64" : "max-h-96"),
+        // Apply max-height only when NOT in dialog and in mobile mode
+        !inDialog && isMobileMode && "max-h-64",
         inDialog ? "flex-1" : ""
       )}>
         {inDialog ? (
@@ -579,11 +567,39 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
     </div>
   );
 
+  const getActionColor = (actionId: string, allButtons: ActionButton[]): string => {
+    if (actionId === 'fold') return '#6b7280'; // Special case for Fold
+    const button = allButtons.find(b => b.id === actionId);
+    if (button && button.type === 'simple') {
+      return button.color;
+    }
+    return '#ffffff'; // Fallback color
+  };
+
+  const getActionButtonStyle = (button: ActionButton) => {
+    if (button.type === 'simple') {
+      return { backgroundColor: button.color };
+    }
+    if (button.type === 'weighted') {
+      const color1 = getActionColor(button.action1Id, actionButtons);
+      const color2 = getActionColor(button.action2Id, actionButtons);
+      return {
+        background: `linear-gradient(to right, ${color1} ${button.weight}%, ${color2} ${button.weight}%)`,
+      };
+    }
+    return {};
+  };
+
   return (
     <div className={cn(
       "bg-background",
       isMobileMode ? "flex flex-col" : "flex h-screen"
     )}>
+      <CreateActionButtonDialog 
+        open={isCreateActionDialogOpen}
+        onOpenChange={setCreateActionDialogOpen}
+        onSave={handleSaveNewAction}
+      />
       {/* Sidebar */}
       <div className={cn(
         "bg-card space-y-4",
@@ -604,7 +620,7 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
         )}>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Действия</h3>
-            <Button size="sm" variant="outline" onClick={addActionButton}>
+            <Button size="sm" variant="outline" onClick={() => setCreateActionDialogOpen(true)}>
               <Plus className="h-3 w-3" />
             </Button>
           </div>
@@ -617,10 +633,13 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
               <div key={button.id} className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  variant={activeAction === button.id ? "default" : "outline"}
                   onClick={() => setActiveAction(button.id)}
-                  style={{ backgroundColor: activeAction === button.id ? button.color : undefined }}
-                  className="flex-1 min-w-0"
+                  style={getActionButtonStyle(button)}
+                  className={cn(
+                    "flex-1 min-w-0 text-primary-foreground border-transparent",
+                    "hover:opacity-90 transition-opacity",
+                    activeAction === button.id && "ring-2 ring-offset-2 ring-offset-card ring-primary"
+                  )}
                 >
                   {editingButton === button.id ? (
                     <Input
@@ -649,12 +668,18 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
                   )}
                 </Button>
                 <div className="flex gap-1">
-                  <input
-                    type="color"
-                    value={button.color}
-                    onChange={(e) => updateActionButton(button.id, 'color', e.target.value)}
-                    className="w-6 h-6 rounded border cursor-pointer"
-                  />
+                  {button.type === 'simple' ? (
+                    <input
+                      type="color"
+                      value={button.color}
+                      onChange={(e) => updateActionButton(button.id, 'color', e.target.value)}
+                      className="w-6 h-6 rounded border cursor-pointer"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 flex items-center justify-center">
+                      <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
                   {actionButtons.length > 1 && (
                     <Button
                       size="sm"

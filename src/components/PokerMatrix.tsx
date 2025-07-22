@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ActionButton } from "@/contexts/RangeContext";
 
 // Poker hand matrix data
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -27,12 +28,6 @@ for (let i = 0; i < RANKS.length; i++) {
   HANDS.push(row);
 }
 
-interface ActionButton {
-  id: string;
-  name: string;
-  color: string;
-}
-
 interface PokerMatrixProps {
   selectedHands: Record<string, string>;
   onHandSelect: (hand: string, mode: 'select' | 'deselect') => void;
@@ -40,6 +35,18 @@ interface PokerMatrixProps {
   actionButtons: ActionButton[];
   readOnly?: boolean;
 }
+
+const getActionColor = (actionId: string, buttons: ActionButton[]): string => {
+  if (actionId === 'fold') {
+    return '#6b7280'; // Muted gray for Fold
+  }
+  const button = buttons.find(b => b.id === actionId);
+  if (button && button.type === 'simple') {
+    return button.color;
+  }
+  // Fallback for weighted buttons or if not found (should not happen in weighted context)
+  return '#ffffff'; 
+};
 
 export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionButtons, readOnly = false }: PokerMatrixProps) => {
   const isMobile = useIsMobile();
@@ -101,20 +108,40 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
     }
   };
 
-  const getHandColor = (hand: string) => {
-    const action = selectedHands[hand];
-    if (!action || action === 'fold') return 'bg-muted/50 text-muted-foreground hover:bg-muted/70';
-    
-    const button = actionButtons.find(b => b.id === action);
-    return button ? '' : 'bg-muted/50 text-muted-foreground hover:bg-muted/70';
+  const getHandStyle = (hand: string) => {
+    const actionId = selectedHands[hand];
+    if (!actionId) return {};
+
+    const action = actionButtons.find(b => b.id === actionId);
+    if (!action) return {};
+
+    if (action.type === 'simple') {
+      return { backgroundColor: action.color, color: 'white' };
+    }
+
+    if (action.type === 'weighted') {
+      const color1 = getActionColor(action.action1Id, actionButtons);
+      const color2 = getActionColor(action.action2Id, actionButtons);
+      const weight1 = action.weight;
+      
+      return {
+        background: `linear-gradient(to right, ${color1} ${weight1}%, ${color2} ${weight1}%)`,
+        color: 'white',
+        border: 'none' // Remove border for gradient buttons for a cleaner look
+      };
+    }
+
+    return {};
   };
 
-  const getHandStyle = (hand: string) => {
-    const action = selectedHands[hand];
-    if (!action || action === 'fold') return {};
-    
-    const button = actionButtons.find(b => b.id === action);
-    return button ? { backgroundColor: button.color, color: 'white' } : {};
+  const getHandColorClass = (hand: string) => {
+    const actionId = selectedHands[hand];
+    if (!actionId) {
+      return 'bg-muted/50 text-muted-foreground hover:bg-muted/70';
+    }
+    // If an action is assigned, we let getHandStyle handle the colors
+    // and return an empty class string to avoid conflicts.
+    return '';
   };
 
   const parentContainerClasses = cn(
@@ -148,7 +175,7 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
             size="sm"
             className={cn(
               buttonClasses,
-              getHandColor(hand)
+              getHandColorClass(hand)
             )}
             style={getHandStyle(hand)}
             onMouseDown={() => handleMouseDown(hand)}

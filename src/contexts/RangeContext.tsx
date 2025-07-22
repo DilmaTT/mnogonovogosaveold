@@ -1,10 +1,23 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-interface ActionButton {
+export interface SimpleActionButton {
+  type: 'simple';
   id: string;
   name: string;
   color: string;
 }
+
+export interface WeightedActionButton {
+  type: 'weighted';
+  id: string;
+  name: string;
+  action1Id: string;
+  action2Id:string;
+  weight: number; // 0-100 for action1
+}
+
+export type ActionButton = SimpleActionButton | WeightedActionButton;
+
 
 interface Range {
   id: string;
@@ -53,7 +66,12 @@ export const RangeProvider = ({ children }: { children: ReactNode }) => {
   
   const [actionButtons, setActionButtons] = useState<ActionButton[]>(() => {
     const saved = localStorage.getItem('poker-ranges-actions');
-    return saved ? JSON.parse(saved) : [{ id: 'raise', name: 'Raise', color: '#8b5cf6' }];
+    if (saved) {
+      // Basic migration: if an old button doesn't have a 'type', assume it's 'simple'
+      const parsed = JSON.parse(saved);
+      return parsed.map((btn: any) => btn.type ? btn : { ...btn, type: 'simple' });
+    }
+    return [{ type: 'simple', id: 'raise', name: 'Raise', color: '#8b5cf6' }];
   });
 
   // Save to localStorage when data changes
