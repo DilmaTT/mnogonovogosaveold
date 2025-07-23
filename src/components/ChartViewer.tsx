@@ -53,7 +53,7 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
           <Button variant="ghost" size="icon" onClick={onBackToCharts} title="Назад к чартам">
             <ArrowLeft className="h-6 w-6 text-foreground" />
           </Button>
-          <h1 className="text-3xl font-bold text-foreground">Просмотр: {chart.name}</h1>
+          {/* Removed: <h1 className="text-3xl font-bold text-foreground">Просмотр: {chart.name}</h1> */}
         </div>
 
         <div
@@ -80,11 +80,10 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
                 </Button>
               ))}
 
-              {chart.buttons.length === 0 ? (
+              {chart.buttons.length === 0 && (
                 <p className="text-muted-foreground z-10">В этом чарте нет кнопок.</p>
-              ) : (
-                <p className="text-muted-foreground z-10">Нажмите кнопку, чтобы просмотреть диапазон.</p>
               )}
+              {/* Removed: <p className="text-muted-foreground z-10">Нажмите кнопку, чтобы просмотреть диапазон.</p> */}
             </>
           ) : (
             /* Conditionally render PokerMatrix when in matrix view */
