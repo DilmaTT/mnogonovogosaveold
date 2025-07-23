@@ -4,13 +4,13 @@ import { Navigation } from "@/components/Navigation";
 import { UserMenu } from "@/components/UserMenu";
 import { RangeEditor } from "@/components/RangeEditor";
 import { Training } from "@/components/Training";
-import { Library } from "@/components/Library";
+import { Chart } from "@/components/Chart"; // Updated import
 import { Button } from "@/components/ui/button";
 import { Monitor, Smartphone } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
-  const [activeSection, setActiveSection] = useState<'editor' | 'training' | 'library'>('editor');
+  const [activeSection, setActiveSection] = useState<'editor' | 'training' | 'chart'>('editor'); // Updated type
   const [forcedLayout, setForcedLayout] = useState<'desktop' | null>(null);
   const [forceMobileOnDesktop, setForceMobileOnDesktop] = useState(false);
   const isMobileDevice = useIsMobile();
@@ -24,8 +24,8 @@ const Index = () => {
         return <RangeEditor isMobileMode={isMobileLayout} />;
       case 'training':
         return <Training isMobileMode={isMobileLayout} />;
-      case 'library':
-        return <Library isMobileMode={isMobileLayout} />;
+      case 'chart': // Updated case
+        return <Chart isMobileMode={isMobileLayout} />; // Updated component
       default:
         return <RangeEditor isMobileMode={isMobileLayout} />;
     }

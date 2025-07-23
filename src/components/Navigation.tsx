@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 import React from "react";
 
 interface NavigationProps {
-  activeSection: 'editor' | 'training' | 'library';
-  onSectionChange: (section: 'editor' | 'training' | 'library') => void;
+  activeSection: 'editor' | 'training' | 'chart'; // Updated type
+  onSectionChange: (section: 'editor' | 'training' | 'chart') => void; // Updated type
   isMobile?: boolean;
   mobileActions?: React.ReactNode;
 }
@@ -13,7 +13,7 @@ export const Navigation = ({ activeSection, onSectionChange, isMobile = false, m
   const sections = [
     { id: 'editor' as const, label: 'Редактор' },
     { id: 'training' as const, label: 'Тренировка' },
-    { id: 'library' as const, label: 'Чарт' }
+    { id: 'chart' as const, label: 'Чарт' } // Updated id and label
   ];
 
   const content = (

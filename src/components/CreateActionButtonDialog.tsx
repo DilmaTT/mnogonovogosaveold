@@ -144,7 +144,14 @@ export const CreateActionButtonDialog = ({ open, onOpenChange, onSave }: CreateA
                   <Select value={action1Id} onValueChange={setAction1Id}>
                     <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
                     <SelectContent>
-                      {weightableActions.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                      {weightableActions.map(a => (
+                        <SelectItem key={a.id} value={a.id}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: a.color }} />
+                            <span>{a.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -153,7 +160,14 @@ export const CreateActionButtonDialog = ({ open, onOpenChange, onSave }: CreateA
                   <Select value={action2Id} onValueChange={setAction2Id}>
                     <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
                     <SelectContent>
-                      {weightableActions.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                      {weightableActions.map(a => (
+                        <SelectItem key={a.id} value={a.id}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: a.color }} />
+                            <span>{a.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
