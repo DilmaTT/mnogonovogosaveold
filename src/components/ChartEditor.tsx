@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Settings } from "lucide-react"; // Import Settings icon
+import { Plus, ArrowLeft, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -25,15 +25,17 @@ interface ChartEditorProps {
   isMobileMode?: boolean;
   chart: StoredChart; // Now receives full chart object
   onBackToCharts: () => void;
-  onSaveChartButtons: (chartId: string, newButtons: ChartButton[]) => void; // Function to save buttons
+  onSaveChart: (updatedChart: StoredChart) => void; // Changed to save full chart
 }
 
-export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSaveChartButtons }: ChartEditorProps) => {
+export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSaveChart }: ChartEditorProps) => {
   const { folders } = useRangeContext();
   const allRanges = folders.flatMap(folder => folder.ranges);
 
   const [chartName, setChartName] = useState(chart.name);
   const [buttons, setButtons] = useState<ChartButton[]>(chart.buttons); // Initialize buttons from chart prop
+  const [canvasWidth, setCanvasWidth] = useState(chart.canvasWidth || 800); // Initialize from chart or default
+  const [canvasHeight, setCanvasHeight] = useState(chart.canvasHeight || 500); // Initialize from chart or default
   const [isButtonModalOpen, setIsButtonModalOpen] = useState(false);
   const [editingButton, setEditingButton] = useState<ChartButton | null>(null);
 
@@ -45,10 +47,12 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
   const [resizeDirection, setResizeDirection] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Update chartName if chart prop changes (e.g., if a different chart is selected)
+  // Update chartName, buttons, and canvas dimensions if chart prop changes (e.g., if a different chart is selected)
   useEffect(() => {
     setChartName(chart.name);
     setButtons(chart.buttons);
+    setCanvasWidth(chart.canvasWidth || 800);
+    setCanvasHeight(chart.canvasHeight || 500);
   }, [chart]);
 
   const handleAddButton = () => {
@@ -263,7 +267,14 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
   // --- End Drag & Resize Logic ---
 
   const handleBackButtonClick = () => {
-    onSaveChartButtons(chart.id, buttons); // Save buttons before navigating back
+    const updatedChart: StoredChart = {
+      ...chart,
+      name: chartName,
+      buttons: buttons,
+      canvasWidth: canvasWidth,
+      canvasHeight: canvasHeight,
+    };
+    onSaveChart(updatedChart); // Save all chart properties before navigating back
     onBackToCharts();
   };
 
@@ -273,7 +284,7 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
       isMobileMode ? "flex-1 overflow-y-auto" : "min-h-screen"
     )}>
       <div className={cn(
-        "max-w-4xl mx-auto",
+        "mx-auto", // Removed max-w-4xl to allow canvas to expand
         isMobileMode ? "w-full" : ""
       )}>
         <div className="flex justify-between items-center mb-6">
@@ -289,9 +300,36 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
           </Button>
         </div>
 
+        {/* Canvas size controls */}
+        <div className="flex items-center gap-4 mb-4">
+          <Label htmlFor="canvasWidth" className="text-right">
+            Ширина холста (px)
+          </Label>
+          <Input
+            id="canvasWidth"
+            type="number"
+            value={canvasWidth}
+            onChange={(e) => setCanvasWidth(parseInt(e.target.value) || 0)}
+            className="w-32"
+            min="100"
+          />
+          <Label htmlFor="canvasHeight" className="text-right">
+            Высота холста (px)
+          </Label>
+          <Input
+            id="canvasHeight"
+            type="number"
+            value={canvasHeight}
+            onChange={(e) => setCanvasHeight(parseInt(e.target.value) || 0)}
+            className="w-32"
+            min="100"
+          />
+        </div>
+
         <div
           ref={canvasRef}
-          className="relative w-full h-[500px] border-2 border-dashed border-muted-foreground rounded-lg bg-card flex items-center justify-center overflow-hidden"
+          className="relative border-2 border-dashed border-muted-foreground rounded-lg bg-card flex items-center justify-center overflow-hidden"
+          style={{ width: canvasWidth, height: canvasHeight }} // Apply dynamic width and height
         >
           {buttons.length === 0 && (
             <p className="text-muted-foreground">Рабочая область (холст)</p>

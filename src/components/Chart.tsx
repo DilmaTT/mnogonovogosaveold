@@ -29,6 +29,8 @@ export interface StoredChart {
   id: string;
   name: string;
   buttons: ChartButton[];
+  canvasWidth?: number; // New: Optional canvas width
+  canvasHeight?: number; // New: Optional canvas height
 }
 
 interface ChartProps {
@@ -37,9 +39,10 @@ interface ChartProps {
   onCreateChart: (chartName: string) => void; // Function to create chart
   onDeleteChart: (chartId: string) => void; // Function to delete chart
   onEditChart: (chart: StoredChart) => void; // Now expects full chart object
+  onPlayChart: (chart: StoredChart) => void; // New: Function to play chart
 }
 
-export const Chart = ({ isMobileMode = false, charts, onCreateChart, onDeleteChart, onEditChart }: ChartProps) => {
+export const Chart = ({ isMobileMode = false, charts, onCreateChart, onDeleteChart, onEditChart, onPlayChart }: ChartProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newChartName, setNewChartName] = useState("");
 
@@ -115,7 +118,7 @@ export const Chart = ({ isMobileMode = false, charts, onCreateChart, onDeleteCha
                   <Button variant="ghost" size="icon" title="Настройки" onClick={() => onEditChart(chart)}>
                     <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Запустить">
+                  <Button variant="ghost" size="icon" title="Запустить" onClick={() => onPlayChart(chart)}>
                     <Play className="h-5 w-5 text-muted-foreground hover:text-foreground" />
                   </Button>
                   <Button variant="ghost" size="icon" title="Удалить" onClick={() => handleDeleteChartClick(chart.id)}>

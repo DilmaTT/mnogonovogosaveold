@@ -6,12 +6,17 @@ import { RangeEditor } from "@/components/RangeEditor";
 import { Training } from "@/components/Training";
 import { Chart, StoredChart, ChartButton } from "@/components/Chart";
 import { ChartEditor } from "@/components/ChartEditor";
+import { ChartViewer } from "@/components/ChartViewer";
 import { Button } from "@/components/ui/button";
 import { Monitor, Smartphone } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useRangeContext } from "@/contexts/RangeContext";
 
 const Index = () => {
-  const [activeSection, setActiveSection] = useState<'editor' | 'training' | 'chart' | 'chartEditor'>('chart');
+  const { folders } = useRangeContext();
+  const allRanges = folders.flatMap(folder => folder.ranges);
+
+  const [activeSection, setActiveSection] = useState<'editor' | 'training' | 'chart' | 'chartEditor' | 'chartViewer'>('chart');
   const [selectedChart, setSelectedChart] = useState<StoredChart | null>(null);
   const [forcedLayout, setForcedLayout] = useState<'desktop' | null>(null);
   const [forceMobileOnDesktop, setForceMobileOnDesktop] = useState(false);
@@ -45,12 +50,20 @@ const Index = () => {
     setActiveSection('chartEditor');
   };
 
+  // Function to handle playing a chart (navigates to viewer)
+  const handlePlayChart = (chart: StoredChart) => {
+    setSelectedChart(chart);
+    setActiveSection('chartViewer');
+  };
+
   // Function to create a new chart
   const handleCreateChart = (chartName: string) => {
     const newChart: StoredChart = {
       id: String(Date.now()),
       name: chartName.trim(),
       buttons: [], // New charts start with no buttons
+      canvasWidth: 800, // Default width for new charts
+      canvasHeight: 500, // Default height for new charts
     };
     setCharts((prevCharts) => [...prevCharts, newChart]);
   };
@@ -60,17 +73,17 @@ const Index = () => {
     setCharts((prevCharts) => prevCharts.filter((chart) => chart.id !== id));
   };
 
-  // Function to save buttons for a specific chart (called from ChartEditor)
-  const handleSaveChartButtons = (chartId: string, newButtons: ChartButton[]) => {
+  // Function to save the entire chart object (called from ChartEditor)
+  const handleSaveChart = (updatedChart: StoredChart) => { // Changed signature
     setCharts((prevCharts) =>
       prevCharts.map((chart) =>
-        chart.id === chartId ? { ...chart, buttons: newButtons } : chart
+        chart.id === updatedChart.id ? updatedChart : chart // Save the entire updated chart
       )
     );
     // After saving, if the selected chart was updated, update it in state too
     setSelectedChart(prevSelected =>
-      prevSelected && prevSelected.id === chartId
-        ? { ...prevSelected, buttons: newButtons }
+      prevSelected && prevSelected.id === updatedChart.id
+        ? updatedChart
         : prevSelected
     );
   };
@@ -89,6 +102,7 @@ const Index = () => {
             onCreateChart={handleCreateChart} // Pass create function
             onDeleteChart={handleDeleteChart} // Pass delete function
             onEditChart={handleEditChart}
+            onPlayChart={handlePlayChart} // Pass play function
           />
         );
       case 'chartEditor':
@@ -97,7 +111,16 @@ const Index = () => {
             isMobileMode={isMobileLayout}
             chart={selectedChart}
             onBackToCharts={() => setActiveSection('chart')}
-            onSaveChartButtons={handleSaveChartButtons} // Pass the save function
+            onSaveChart={handleSaveChart} // Changed prop name
+          />
+        ) : null;
+      case 'chartViewer':
+        return selectedChart ? (
+          <ChartViewer
+            isMobileMode={isMobileLayout}
+            chart={selectedChart}
+            allRanges={allRanges} // Pass allRanges for button linking
+            onBackToCharts={() => setActiveSection('chart')}
           />
         ) : null;
       default:

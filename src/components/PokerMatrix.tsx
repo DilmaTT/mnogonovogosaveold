@@ -34,6 +34,7 @@ interface PokerMatrixProps {
   activeAction: string;
   actionButtons: ActionButton[];
   readOnly?: boolean;
+  isBackgroundMode?: boolean; // New prop
 }
 
 const getActionColor = (actionId: string, buttons: ActionButton[]): string => {
@@ -48,13 +49,21 @@ const getActionColor = (actionId: string, buttons: ActionButton[]): string => {
   return '#ffffff'; 
 };
 
-export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionButtons, readOnly = false }: PokerMatrixProps) => {
+export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionButtons, readOnly = false, isBackgroundMode = false }: PokerMatrixProps) => {
   const isMobile = useIsMobile();
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<'select' | 'deselect' | null>(null);
   const lastHandEnteredRef = useRef<string | null>(null);
   // Initialize zoomLevel to 0.85 (15% reduction) for desktop, 1 for mobile
   const [zoomLevel, setZoomLevel] = useState<number>(isMobile ? 1 : 0.85);
+
+  // If in background mode, disable dragging and force readOnly
+  useEffect(() => {
+    if (isBackgroundMode) {
+      setIsDragging(false);
+      setDragMode(null);
+    }
+  }, [isBackgroundMode]);
 
   const handleDragEnd = () => {
     setIsDragging(false);
@@ -75,7 +84,7 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
   }, []);
 
   const handleMouseDown = (hand: string) => {
-    if (readOnly) return;
+    if (readOnly || isBackgroundMode) return; // Prevent interaction in background mode
     setIsDragging(true);
     lastHandEnteredRef.current = hand;
 
@@ -87,7 +96,7 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
   };
 
   const handleMouseEnter = (hand: string) => {
-    if (readOnly || !isDragging || !dragMode) return;
+    if (readOnly || isBackgroundMode || !isDragging || !dragMode) return; // Prevent interaction in background mode
     
     if (lastHandEnteredRef.current !== hand) {
       onHandSelect(hand, dragMode);
@@ -96,7 +105,7 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
   };
 
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
+    if (!isDragging || isBackgroundMode) return; // Prevent interaction in background mode
     event.preventDefault();
 
     const touch = event.touches[0];
@@ -144,14 +153,17 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
     return '';
   };
 
+  // Adjust parentContainerClasses based on isBackgroundMode
   const parentContainerClasses = cn(
     "space-y-4",
-    isMobile ? "w-full !px-0" : "w-[120%]" // Added !px-0 for mobile to remove padding
+    isBackgroundMode ? "w-full h-full flex items-center justify-center" : (isMobile ? "w-full !px-0" : "w-[120%]")
   );
   
+  // Adjust gridClasses for background mode to ensure it scales within its parent
   const gridClasses = cn(
     "grid grid-cols-13 aspect-square w-full select-none rounded-lg",
-    isMobile ? "gap-0.5 sm:gap-1" : "gap-2 p-6 border" // Removed border for mobile
+    isBackgroundMode ? "gap-0.5" : (isMobile ? "gap-0.5 sm:gap-1" : "gap-2 p-6 border"), // Removed p-6 border for background mode
+    isBackgroundMode ? "max-w-full max-h-full" : "" // Ensure it fits within parent
   );
   
   const buttonClasses = cn(
@@ -184,7 +196,7 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
               e.preventDefault();
               handleMouseDown(hand);
             }}
-            disabled={readOnly}
+            disabled={readOnly || isBackgroundMode} // Disable interaction in background mode
           >
             {hand}
           </Button>
@@ -195,8 +207,7 @@ export const PokerMatrix = ({ selectedHands, onHandSelect, activeAction, actionB
 
   return (
     <div className={parentContainerClasses}>
-      {isMobile ? (
-        // Mobile: Render directly without scale wrapper
+      {isMobile || isBackgroundMode ? ( // Render directly for mobile or background mode
         matrixContent
       ) : (
         // Desktop: Render with scale wrapper and zoom buttons
