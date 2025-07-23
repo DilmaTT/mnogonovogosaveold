@@ -4,11 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { X, ArrowLeft, Circle, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRangeContext } from "@/contexts/RangeContext";
 import { PokerMatrix } from "@/components/PokerMatrix";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LibraryProps {
   isMobileMode?: boolean;
@@ -30,6 +31,7 @@ export const Library = ({ isMobileMode = false }: LibraryProps) => {
   const [cells, setCells] = useState<CellData[]>([]);
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
   const [viewingRange, setViewingRange] = useState<CellData | null>(null);
+  const isMobile = useIsMobile();
 
   // Get all available ranges from folders
   const availableRanges = folders.flatMap(folder => 
@@ -201,10 +203,7 @@ export const Library = ({ isMobileMode = false }: LibraryProps) => {
     <div className="bg-background p-6 min-h-screen">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Библиотека ренжей</h1>
-          <p className="text-muted-foreground">
-            Настройте сетку и заполните ячейки ренжами
-          </p>
+          <h1 className="text-2xl font-bold mb-2">Выбор ренжа</h1>
         </div>
 
         {/* Grid Size Settings */}
@@ -295,9 +294,18 @@ export const Library = ({ isMobileMode = false }: LibraryProps) => {
 
         {/* Cell Configuration Dialog */}
         <Dialog open={selectedCell !== null} onOpenChange={() => setSelectedCell(null)}>
-          <DialogContent>
+          <DialogContent mobileFullscreen={isMobile}>
             <DialogHeader>
-              <DialogTitle>Настройка ячейки</DialogTitle>
+              {isMobile ? (
+                <DialogTitle>Выбор ренжа</DialogTitle>
+              ) : (
+                <>
+                  <DialogTitle>Управление ренжами</DialogTitle>
+                  <DialogDescription>
+                    Создавайте, удаляйте и выбирайте папки и ренжи.
+                  </DialogDescription>
+                </>
+              )}
             </DialogHeader>
             
             <CellConfigForm

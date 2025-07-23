@@ -465,11 +465,11 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
     )}>
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
-          {isMobileMode || inDialog ? "Управление папками и ренжами" : "Создать"}
+          {isMobileMode || inDialog ? "Создать папку" : "Создать"}
         </h2>
         {(isMobileMode || inDialog) ? (
           <Button size="sm" onClick={addFolder} variant="outline">
-            <Plus className="h-4 w-4" /> Добавить папку
+            <Plus className="h-4 w-4" />  
           </Button>
         ) : (
           <Button size="sm" onClick={addFolder} variant="ghost" className="h-6 w-6 p-0">
@@ -703,11 +703,8 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
               </DialogTrigger>
               <DialogContent mobileFullscreen={true} className="flex flex-col">
                 <DialogHeader>
-                  <DialogTitle>Управление ренжами</DialogTitle>
-                  <DialogDescription>
-                    Создавайте, удаляйте и выбирайте папки и ренжи.
-                  </DialogDescription>
-                </DialogHeader>
+                  <DialogTitle>Выбрать ренж</DialogTitle>
+                               </DialogHeader>
                 {renderFolderAndRangeManagement(true)}
                 <DialogFooter className="mt-auto p-4 border-t">
                   <Button onClick={() => setShowRangeSelectorDialog(false)} className="w-full">
