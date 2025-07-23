@@ -303,26 +303,28 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
         {/* Canvas size controls */}
         <div className="flex items-center gap-4 mb-4">
           <Label htmlFor="canvasWidth" className="text-right">
-            Ширина холста (px)
+            Ширина
           </Label>
           <Input
             id="canvasWidth"
             type="number"
             value={canvasWidth}
             onChange={(e) => setCanvasWidth(parseInt(e.target.value) || 0)}
-            className="w-32"
+            className="w-20"
             min="100"
+            maxLength={4}
           />
           <Label htmlFor="canvasHeight" className="text-right">
-            Высота холста (px)
+            Высота
           </Label>
           <Input
             id="canvasHeight"
             type="number"
             value={canvasHeight}
             onChange={(e) => setCanvasHeight(parseInt(e.target.value) || 0)}
-            className="w-32"
+            className="w-20"
             min="100"
+            maxLength={4}
           />
         </div>
 
