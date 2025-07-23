@@ -20,6 +20,11 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
   const [showMatrixView, setShowMatrixView] = useState(false); // State to control showing matrix vs buttons
 
   const handleButtonClick = (button: ChartButton) => {
+    if (button.type === 'exit') {
+      onBackToCharts(); // Navigate back to main chart list
+      return;
+    }
+
     const linkedRange = allRanges.find(range => range.id === button.linkedItem);
     if (linkedRange) {
       setDisplayedRange(linkedRange);

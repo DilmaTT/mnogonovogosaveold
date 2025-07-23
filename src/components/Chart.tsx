@@ -23,6 +23,7 @@ export interface ChartButton {
   y: number;
   width: number;
   height: number;
+  type?: 'normal' | 'exit'; // New: Optional type property
 }
 
 export interface StoredChart {

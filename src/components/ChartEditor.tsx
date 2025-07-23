@@ -65,6 +65,7 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
       y: 50,
       width: 120, // Default width
       height: 40, // Default height
+      type: 'normal', // Default type for new buttons
     };
     setButtons((prev) => [...prev, newButton]);
     setEditingButton(newButton);
@@ -403,19 +404,26 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
                 <Select
                   value={editingButton?.linkedItem || ""}
                   onValueChange={(value) => setEditingButton(prev => prev ? { ...prev, linkedItem: value } : null)}
+                  disabled={editingButton?.type === 'exit'} // Disable if it's an exit button
                 >
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Выберите чарт/диапазон" />
+                    <SelectValue placeholder={editingButton?.type === 'exit' ? "Выход из режима просмотра чарта" : "Выберите чарт/диапазон"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {allRanges.length === 0 ? (
-                      <SelectItem value="" disabled>Нет доступных диапазонов</SelectItem>
+                    {editingButton?.type === 'exit' ? (
+                      // Assign a non-empty, unique value for the disabled exit item
+                      <SelectItem value="exit-chart-placeholder" disabled>Выход из режима просмотра чарта</SelectItem>
                     ) : (
-                      allRanges.map(range => (
-                        <SelectItem key={range.id} value={range.id}>
-                          {range.name}
-                        </SelectItem>
-                      ))
+                      allRanges.length === 0 ? (
+                        // Assign a non-empty, unique value for the disabled "no ranges" item
+                        <SelectItem value="no-ranges-available-placeholder" disabled>Нет доступных диапазонов</SelectItem>
+                      ) : (
+                        allRanges.map(range => (
+                          <SelectItem key={range.id} value={range.id}>
+                            {range.name}
+                          </SelectItem>
+                        ))
+                      )
                     )}
                   </SelectContent>
                 </Select>

@@ -58,10 +58,23 @@ const Index = () => {
 
   // Function to create a new chart
   const handleCreateChart = (chartName: string) => {
+    const newChartId = String(Date.now());
     const newChart: StoredChart = {
-      id: String(Date.now()),
+      id: newChartId,
       name: chartName.trim(),
-      buttons: [], // New charts start with no buttons
+      buttons: [
+        {
+          id: `exit-${newChartId}`, // Unique ID for the exit button
+          name: "Выход",
+          color: "#EF4444", // A distinct color for exit, e.g., red
+          linkedItem: "", // No linked item for exit button
+          x: 10, // Default position
+          y: 10,
+          width: 150, // Default width
+          height: 40, // Default height
+          type: 'exit', // Mark as exit button
+        }
+      ],
       canvasWidth: 800, // Default width for new charts
       canvasHeight: 500, // Default height for new charts
     };
