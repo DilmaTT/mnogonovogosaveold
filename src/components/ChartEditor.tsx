@@ -288,21 +288,22 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
         "mx-auto", // Removed max-w-4xl to allow canvas to expand
         isMobileMode ? "w-full" : ""
       )}>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-2"> {/* Reduced margin-bottom */}
+          {/* Left side: Back button, Chart Name */}
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={handleBackButtonClick} title="Назад к чартам">
               <ArrowLeft className="h-6 w-6 text-foreground" />
             </Button>
             <h1 className="text-3xl font-bold text-foreground">{chartName}</h1>
           </div>
+        </div>
+
+        {/* New row for Add Button, Canvas size controls */}
+        <div className="flex items-center gap-4 mb-6"> {/* Added margin-bottom for spacing */}
           <Button onClick={handleAddButton} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Добавить кнопку
           </Button>
-        </div>
-
-        {/* Canvas size controls */}
-        <div className="flex items-center gap-4 mb-4">
           <Label htmlFor="canvasWidth" className="text-right">
             Ширина
           </Label>
