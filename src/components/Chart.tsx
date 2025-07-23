@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { Plus, Settings, Play, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -74,7 +74,7 @@ export const Chart = ({ isMobileMode = false, charts, onCreateChart, onDeleteCha
         isMobileMode ? "w-full" : ""
       )}>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-foreground">Мои Чарты</h1>
+          <h1 className="text-xl font-bold text-foreground">Мои Чарты</h1>
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleCreateChartClick} className="flex items-center gap-2">
@@ -109,21 +109,21 @@ export const Chart = ({ isMobileMode = false, charts, onCreateChart, onDeleteCha
             <p>Нажмите "+ Создать чарт", чтобы добавить первый.</p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-2">
             {charts.map((chart) => (
-              <Card key={chart.id} className="flex items-center justify-between p-4">
+              <Card key={chart.id} className="flex items-center justify-between px-3 py-1">
                 <div className="flex-1">
-                  <CardTitle className="text-lg font-semibold">{chart.name}</CardTitle>
+                  <CardTitle className="text-base font-semibold">{chart.name}</CardTitle>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" title="Настройки" onClick={() => onEditChart(chart)}>
-                    <Settings className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" title="Настройки" onClick={() => onEditChart(chart)} className="h-6 w-6">
+                    <Settings className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Запустить" onClick={() => onPlayChart(chart)}>
-                    <Play className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                  <Button variant="ghost" size="icon" title="Запустить" onClick={() => onPlayChart(chart)} className="h-6 w-6">
+                    <Play className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Удалить" onClick={() => handleDeleteChartClick(chart.id)}>
-                    <Trash2 className="h-5 w-5 text-destructive hover:text-destructive/80" />
+                  <Button variant="ghost" size="icon" title="Удалить" onClick={() => handleDeleteChartClick(chart.id)} className="h-6 w-6">
+                    <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
                   </Button>
                 </div>
               </Card>

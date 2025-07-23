@@ -300,7 +300,7 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
 
         {/* New row for Add Button, Canvas size controls */}
         <div className="flex items-center gap-4 mb-6"> {/* Added margin-bottom for spacing */}
-          <Button onClick={handleAddButton} className="flex items-center gap-2">
+          <Button onClick={handleAddButton} className="flex items-center gap-2 h-7">
             <Plus className="h-4 w-4" />
             Добавить кнопку
           </Button>
@@ -312,7 +312,7 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
             type="number"
             value={canvasWidth}
             onChange={(e) => setCanvasWidth(parseInt(e.target.value) || 0)}
-            className="w-20"
+            className="w-20 h-7"
             min="100"
             maxLength={4}
           />
@@ -324,7 +324,7 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
             type="number"
             value={canvasHeight}
             onChange={(e) => setCanvasHeight(parseInt(e.target.value) || 0)}
-            className="w-20"
+            className="w-20 h-7"
             min="100"
             maxLength={4}
           />
