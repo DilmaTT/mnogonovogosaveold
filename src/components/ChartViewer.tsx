@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StoredChart, ChartButton } from "./Chart"; // Import interfaces
 import { Range } from "@/contexts/RangeContext"; // Import Range interface
@@ -18,6 +17,18 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
   const { actionButtons } = useRangeContext(); // Get actionButtons from context
   const [displayedRange, setDisplayedRange] = useState<Range | null>(null); // State to hold the range to display
   const [showMatrixView, setShowMatrixView] = useState(false); // State to control showing matrix vs buttons
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (isMobileMode) {
+      const handleResize = () => {
+        setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+      };
+      handleResize();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, [isMobileMode]);
 
   const handleButtonClick = (button: ChartButton) => {
     if (button.type === 'exit') {
@@ -40,28 +51,39 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
     setShowMatrixView(false); // Switch back to buttons view
   };
 
+  const scale = (isMobileMode && viewportSize.width > 0 && chart.canvasWidth > 0)
+    ? Math.min(
+        (viewportSize.width * 0.95) / chart.canvasWidth, // Use 95% of viewport to leave some margin
+        (viewportSize.height * 0.95) / chart.canvasHeight
+      )
+    : 1;
+
   return (
     <div className={cn(
       "p-6",
-      isMobileMode ? "flex-1 overflow-y-auto" : "min-h-screen"
+      isMobileMode
+        ? "fixed inset-0 z-50 flex flex-col items-center justify-center bg-background p-2"
+        : "min-h-screen"
     )}>
       <div className={cn(
         "max-w-4xl mx-auto",
-        isMobileMode ? "w-full" : ""
+        isMobileMode ? "w-full h-full flex flex-col items-center justify-center" : "w-full"
       )}>
-        <div className="flex items-center gap-4 mb-6">
-          {/* Removed: <Button variant="ghost" size="icon" onClick={onBackToCharts} title="Назад к чартам">
-            <ArrowLeft className="h-6 w-6 text-foreground" />
-          </Button> */}
-          {/* Removed: <h1 className="text-3xl font-bold text-foreground">Просмотр: {chart.name}</h1> */}
-        </div>
 
         <div
-          className="relative w-full h-[500px] border-2 border-solid border-muted-foreground rounded-lg bg-card flex items-center justify-center overflow-hidden"
+          className="relative border-2 border-solid border-muted-foreground rounded-lg bg-card flex items-center justify-center overflow-hidden"
+          style={isMobileMode ? {
+            width: chart.canvasWidth,
+            height: chart.canvasHeight,
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+          } : {
+            width: '100%',
+            height: '500px',
+          }}
         >
           {!showMatrixView ? (
             <>
-              {/* Buttons visible when not in matrix view */}
               {chart.buttons.map((button) => (
                 <Button
                   key={button.id}
@@ -79,23 +101,20 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
                   {button.name}
                 </Button>
               ))}
-
               {chart.buttons.length === 0 && (
                 <p className="text-muted-foreground z-10">В этом чарте нет кнопок.</p>
               )}
-              {/* Removed: <p className="text-muted-foreground z-10">Нажмите кнопку, чтобы просмотреть диапазон.</p> */}
             </>
           ) : (
-            /* Conditionally render PokerMatrix when in matrix view */
             displayedRange ? (
               <div className="absolute inset-0 flex items-center justify-center p-4">
                 <PokerMatrix
-                  selectedHands={displayedRange.hands} // Pass the hands from the selected range
-                  onHandSelect={() => {}} // No interaction in viewer mode
-                  activeAction="" // No active action in viewer mode
-                  actionButtons={actionButtons} // Pass actionButtons for coloring
-                  readOnly={true} // Make it read-only
-                  isBackgroundMode={true} // Use background mode styling
+                  selectedHands={displayedRange.hands}
+                  onHandSelect={() => {}}
+                  activeAction=""
+                  actionButtons={actionButtons}
+                  readOnly={true}
+                  isBackgroundMode={true}
                 />
               </div>
             ) : (
@@ -105,7 +124,10 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
         </div>
 
         {showMatrixView && (
-          <div className="flex justify-center mt-6">
+          <div className={cn(
+            "flex justify-center mt-6",
+            isMobileMode && "absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
+          )}>
             <Button onClick={handleBackToButtons} variant="outline" className="px-8 py-2">
               Назад
             </Button>

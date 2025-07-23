@@ -43,6 +43,7 @@ const Index = () => {
   }, [charts]);
 
   const isMobileLayout = (isMobileDevice && forcedLayout !== 'desktop') || (!isMobileDevice && forceMobileOnDesktop);
+  const isFullScreenChartMode = isMobileLayout && activeSection === 'chartViewer';
 
   // Function to handle editing a chart (navigates to editor)
   const handleEditChart = (chart: StoredChart) => {
@@ -169,7 +170,9 @@ const Index = () => {
     </div>
   );
 
-  return (
+  return isFullScreenChartMode ? (
+    renderSection()
+  ) : (
     <div className="min-h-screen bg-background">
       {!isMobileLayout ? (
         // Desktop Layout

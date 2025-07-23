@@ -399,6 +399,24 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
     onBackToCharts();
   };
 
+  const handleDimensionChange = (
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<number>>
+  ) => {
+    // This allows the input to be cleared, resulting in NaN state, which is handled by the value prop
+    setter(parseInt(value, 10));
+  };
+
+  const handleDimensionBlur = (
+    currentValue: number,
+    setter: React.Dispatch<React.SetStateAction<number>>
+  ) => {
+    const minSize = 100;
+    if (isNaN(currentValue) || currentValue < minSize) {
+      setter(minSize);
+    }
+  };
+
   return (
     <div className={cn(
       "p-6",
@@ -430,8 +448,9 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
           <Input
             id="canvasWidth"
             type="number"
-            value={canvasWidth}
-            onChange={(e) => setCanvasWidth(parseInt(e.target.value) || 0)}
+            value={isNaN(canvasWidth) ? '' : canvasWidth}
+            onChange={(e) => handleDimensionChange(e.target.value, setCanvasWidth)}
+            onBlur={() => handleDimensionBlur(canvasWidth, setCanvasWidth)}
             className="w-20 h-7"
             min="100"
             maxLength={4}
@@ -442,8 +461,9 @@ export const ChartEditor = ({ isMobileMode = false, chart, onBackToCharts, onSav
           <Input
             id="canvasHeight"
             type="number"
-            value={canvasHeight}
-            onChange={(e) => setCanvasHeight(parseInt(e.target.value) || 0)}
+            value={isNaN(canvasHeight) ? '' : canvasHeight}
+            onChange={(e) => handleDimensionChange(e.target.value, setCanvasHeight)}
+            onBlur={() => handleDimensionBlur(canvasHeight, setCanvasHeight)}
             className="w-20 h-7"
             min="100"
             maxLength={4}
