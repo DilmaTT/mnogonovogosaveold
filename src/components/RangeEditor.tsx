@@ -410,12 +410,48 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
   };
 
   const deleteActionButton = (id: string) => {
-    if (actionButtons.length > 1) {
-      setActionButtons(prev => prev.filter(button => button.id !== id));
-      if (activeAction === id) {
-        setActiveAction(actionButtons[0].id);
-      }
+    if (actionButtons.length <= 1) {
+      return; // Prevent deleting the last action button.
     }
+
+    const buttonToDelete = actionButtons.find(b => b.id === id);
+    if (!buttonToDelete) return;
+
+    // Collect all action IDs that need to be deleted.
+    // This includes the selected action and any weighted actions that depend on it if it's a simple action.
+    const idsToDelete = new Set<string>([id]);
+    if (buttonToDelete.type === 'simple') {
+      actionButtons.forEach(btn => {
+        if (btn.type === 'weighted' && (btn.action1Id === id || btn.action2Id === id)) {
+          idsToDelete.add(btn.id);
+        }
+      });
+    }
+
+    // Reset hands that use any of the deleted actions across all ranges.
+    setFolders(prevFolders =>
+      prevFolders.map(folder => ({
+        ...folder,
+        ranges: folder.ranges.map(range => {
+          const newHands = { ...range.hands };
+          Object.entries(newHands).forEach(([hand, actionId]) => {
+            if (idsToDelete.has(actionId)) {
+              delete newHands[hand]; // This effectively reverts it to "fold"
+            }
+          });
+          return { ...range, hands: newHands };
+        })
+      }))
+    );
+
+    // Now, remove the button(s) and update the active action if needed.
+    setActionButtons(prevButtons => {
+      const updatedButtons = prevButtons.filter(button => !idsToDelete.has(button.id));
+      if (idsToDelete.has(activeAction)) {
+        setActiveAction(updatedButtons[0]?.id || '');
+      }
+      return updatedButtons;
+    });
   };
 
   const onHandSelect = (hand: string, mode: 'select' | 'deselect') => {
@@ -593,108 +629,133 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
   return (
     <div className={cn(
       "bg-background",
-      isMobileMode ? "flex flex-col" : "flex h-screen"
+      isMobileMode ? "h-screen flex flex-col" : "flex h-screen"
     )}>
       <CreateActionButtonDialog 
         open={isCreateActionDialogOpen}
         onOpenChange={setCreateActionDialogOpen}
         onSave={handleSaveNewAction}
       />
-      {/* Sidebar */}
-      <div className={cn(
-        "bg-card space-y-4",
-        isMobileMode ? "order-2 flex flex-col p-3" : "w-80 border-r flex flex-col p-4" // Adjusted padding for mobile
-      )}>
-        {/* Folder section */}
-        <div className={cn(
-          "space-y-4",
-          isMobileMode ? "hidden" : "order-1"
-        )}>
-          {renderFolderAndRangeManagement()}
-        </div>
 
-        {/* Action Buttons */}
-        <div className={cn(
-          "space-y-3 border-t",
-          isMobileMode ? "order-1 pt-2" : "order-2 pt-4"
-        )}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium">Действия</h3>
-            <Button size="sm" variant="outline" onClick={() => setCreateActionDialogOpen(true)}>
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-          
-          <div className={cn(
-            "space-y-2",
-            isMobileMode && "grid grid-cols-2 gap-2"
-          )}>
-            {actionButtons.map((button) => (
-              <div key={button.id} className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => setActiveAction(button.id)}
-                  style={getActionButtonStyle(button)}
-                  className={cn(
-                    "flex-1 min-w-0 text-primary-foreground border-transparent",
-                    "hover:opacity-90 transition-opacity",
-                    activeAction === button.id && "ring-2 ring-offset-2 ring-offset-card ring-primary"
-                  )}
-                >
-                  {editingButton === button.id ? (
-                    <Input
-                      value={button.name}
-                      onChange={(e) => updateActionButton(button.id, 'name', e.target.value)}
-                      onBlur={() => setEditingButton(null)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          setEditingButton(null);
-                        }
-                      }}
-                      className="h-5 text-xs border-none bg-transparent p-0 focus:bg-background text-center w-full"
-                      autoFocus
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span 
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        setEditingButton(button.id);
-                      }}
-                      className="cursor-text truncate px-1"
-                    >
-                      {button.name}
-                    </span>
-                  )}
-                </Button>
-                <div className="flex gap-1">
-                  {button.type === 'simple' ? (
-                    <input
-                      type="color"
-                      value={button.color}
-                      onChange={(e) => updateActionButton(button.id, 'color', e.target.value)}
-                      className="w-6 h-6 rounded border cursor-pointer"
-                    />
-                  ) : (
-                    <div className="w-6 h-6 flex items-center justify-center">
-                      <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+      {isMobileMode ? (
+        // MOBILE LAYOUT
+        <>
+          {/* Main scrollable content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="mx-auto max-w-full">
+              <div className="space-y-4">
+                {/* Header: Folder/Range Name and Statistics */}
+                <div className="flex justify-between items-end">
+                  <div className="text-left">
+                    {currentFolder && (
+                      <h2 className="text-base font-bold text-muted-foreground mb-px">
+                        {currentFolder.name}
+                      </h2>
+                    )}
+                    {currentRange && (
+                      <h1 className="text-sm font-normal ml-1">
+                        {currentRange.name}
+                      </h1>
+                    )}
+                  </div>
+                  {currentRange && (
+                    <div className="bg-background/80 px-2 py-1 rounded text-xs font-mono flex items-center gap-1 z-10">
+                      <span className="text-primary font-bold">{getSelectedCombinationsPercentage()}%</span>
+                      <span className="text-muted-foreground">({getSelectedCombinationsCount()})</span>
                     </div>
                   )}
-                  {actionButtons.length > 1 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteActionButton(button.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
                 </div>
+
+                {/* Poker Matrix */}
+                {currentRange && (
+                  <div className="overflow-x-auto">
+                    <PokerMatrix
+                      selectedHands={currentRange.hands}
+                      onHandSelect={onHandSelect}
+                      activeAction={activeAction}
+                      actionButtons={actionButtons}
+                    />
+                  </div>
+                )}
               </div>
-            ))}
+            </div>
           </div>
 
-          {isMobileMode && (
+          {/* Fixed Bottom Bar */}
+          <div className="bg-card border-t p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Действия</h3>
+                <Button size="sm" variant="outline" onClick={() => setCreateActionDialogOpen(true)}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {actionButtons.map((button) => (
+                  <div key={button.id} className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setActiveAction(button.id)}
+                      style={getActionButtonStyle(button)}
+                      className={cn(
+                        "flex-1 min-w-0 text-primary-foreground border-transparent",
+                        "hover:opacity-90 transition-opacity",
+                        activeAction === button.id && "ring-2 ring-offset-2 ring-offset-card ring-primary"
+                      )}
+                    >
+                      {editingButton === button.id ? (
+                        <Input
+                          value={button.name}
+                          onChange={(e) => updateActionButton(button.id, 'name', e.target.value)}
+                          onBlur={() => setEditingButton(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setEditingButton(null);
+                          }}
+                          className="h-5 text-xs border-none bg-transparent p-0 focus:bg-background text-center w-full"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span 
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            setEditingButton(button.id);
+                          }}
+                          className="cursor-text truncate px-1"
+                        >
+                          {button.name}
+                        </span>
+                      )}
+                    </Button>
+                    <div className="flex gap-1">
+                      {button.type === 'simple' ? (
+                        <input
+                          type="color"
+                          value={button.color}
+                          onChange={(e) => updateActionButton(button.id, 'color', e.target.value)}
+                          className="w-6 h-6 rounded border cursor-pointer"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      {actionButtons.length > 1 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteActionButton(button.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <Dialog open={showRangeSelectorDialog} onOpenChange={setShowRangeSelectorDialog}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full mt-4">
@@ -704,7 +765,7 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
               <DialogContent mobileFullscreen={true} className="flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Выбрать ренж</DialogTitle>
-                               </DialogHeader>
+                </DialogHeader>
                 {renderFolderAndRangeManagement(true)}
                 <DialogFooter className="mt-auto p-4 border-t">
                   <Button onClick={() => setShowRangeSelectorDialog(false)} className="w-full">
@@ -713,61 +774,136 @@ export const RangeEditor = ({ isMobileMode = false }: RangeEditorProps) => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className={cn(
-        isMobileMode ? "order-1 flex-1 p-4" : "flex-1 p-6" // Adjusted padding for mobile
-      )}>
-        <div className={cn(
-          "mx-auto",
-          isMobileMode ? "max-w-full" : "max-w-4xl"
-        )}>
-          {/* New wrapper for header and matrix */}
-          <div className={cn(
-            "space-y-4",
-            !isMobileMode && "lg:w-[63%] mx-auto"
-          )}>
-            {/* Header: Folder/Range Name and Statistics */}
-            <div className="flex justify-between items-end">
-              <div className="text-left">
-                {currentFolder && (
-                  <h2 className="text-base font-bold text-muted-foreground mb-px">
-                    {currentFolder.name}
-                  </h2>
-                )}
-                {currentRange && (
-                  <h1 className="text-sm font-normal ml-1">
-                    {currentRange.name}
-                  </h1>
-                )}
-              </div>
-
-              {currentRange && (
-                <div className="bg-background/80 px-2 py-1 rounded text-xs font-mono flex items-center gap-1 z-10">
-                  <span className="text-primary font-bold">{getSelectedCombinationsPercentage()}%</span>
-                  <span className="text-muted-foreground">({getSelectedCombinationsCount()})</span>
-                </div>
-              )}
+          </div>
+        </>
+      ) : (
+        // DESKTOP LAYOUT
+        <>
+          {/* Sidebar */}
+          <div className="bg-card space-y-4 w-80 border-r flex flex-col p-4">
+            {/* Folder section */}
+            <div className="space-y-4 order-1">
+              {renderFolderAndRangeManagement()}
             </div>
 
-            {currentRange && (
-              <div className={cn(
-                isMobileMode && "overflow-x-auto"
-              )}>
-                <PokerMatrix
-                  selectedHands={currentRange.hands}
-                  onHandSelect={onHandSelect}
-                  activeAction={activeAction}
-                  actionButtons={actionButtons}
-                />
+            {/* Action Buttons */}
+            <div className="space-y-3 border-t order-2 pt-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Действия</h3>
+                <Button size="sm" variant="outline" onClick={() => setCreateActionDialogOpen(true)}>
+                  <Plus className="h-3 w-3" />
+                </Button>
               </div>
-            )}
+              
+              <div className="space-y-2">
+                {actionButtons.map((button) => (
+                  <div key={button.id} className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setActiveAction(button.id)}
+                      style={getActionButtonStyle(button)}
+                      className={cn(
+                        "flex-1 min-w-0 text-primary-foreground border-transparent",
+                        "hover:opacity-90 transition-opacity",
+                        activeAction === button.id && "ring-2 ring-offset-2 ring-offset-card ring-primary"
+                      )}
+                    >
+                      {editingButton === button.id ? (
+                        <Input
+                          value={button.name}
+                          onChange={(e) => updateActionButton(button.id, 'name', e.target.value)}
+                          onBlur={() => setEditingButton(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setEditingButton(null);
+                          }}
+                          className="h-5 text-xs border-none bg-transparent p-0 focus:bg-background text-center w-full"
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span 
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            setEditingButton(button.id);
+                          }}
+                          className="cursor-text truncate px-1"
+                        >
+                          {button.name}
+                        </span>
+                      )}
+                    </Button>
+                    <div className="flex gap-1">
+                      {button.type === 'simple' ? (
+                        <input
+                          type="color"
+                          value={button.color}
+                          onChange={(e) => updateActionButton(button.id, 'color', e.target.value)}
+                          className="w-6 h-6 rounded border cursor-pointer"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      {actionButtons.length > 1 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteActionButton(button.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Main Content */}
+          <div className="flex-1 p-6">
+            <div className="mx-auto max-w-4xl">
+              <div className="space-y-4 lg:w-[63%] mx-auto">
+                {/* Header: Folder/Range Name and Statistics */}
+                <div className="flex justify-between items-end">
+                  <div className="text-left">
+                    {currentFolder && (
+                      <h2 className="text-base font-bold text-muted-foreground mb-px">
+                        {currentFolder.name}
+                      </h2>
+                    )}
+                    {currentRange && (
+                      <h1 className="text-sm font-normal ml-1">
+                        {currentRange.name}
+                      </h1>
+                    )}
+                  </div>
+                  {currentRange && (
+                    <div className="bg-background/80 px-2 py-1 rounded text-xs font-mono flex items-center gap-1 z-10">
+                      <span className="text-primary font-bold">{getSelectedCombinationsPercentage()}%</span>
+                      <span className="text-muted-foreground">({getSelectedCombinationsCount()})</span>
+                    </div>
+                  )}
+                </div>
+
+                {currentRange && (
+                  <div className={cn(
+                    isMobileMode && "overflow-x-auto"
+                  )}>
+                    <PokerMatrix
+                      selectedHands={currentRange.hands}
+                      onHandSelect={onHandSelect}
+                      activeAction={activeAction}
+                      actionButtons={actionButtons}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
