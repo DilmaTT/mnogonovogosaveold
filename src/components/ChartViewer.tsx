@@ -50,9 +50,9 @@ export const ChartViewer = ({ isMobileMode = false, chart, allRanges, onBackToCh
         isMobileMode ? "w-full" : ""
       )}>
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={onBackToCharts} title="Назад к чартам">
+          {/* Removed: <Button variant="ghost" size="icon" onClick={onBackToCharts} title="Назад к чартам">
             <ArrowLeft className="h-6 w-6 text-foreground" />
-          </Button>
+          </Button> */}
           {/* Removed: <h1 className="text-3xl font-bold text-foreground">Просмотр: {chart.name}</h1> */}
         </div>
 
